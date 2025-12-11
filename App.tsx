@@ -5,11 +5,20 @@ import {
 import { 
   FileText, Send, CheckCircle, Clock, Search, ChevronRight, Bot, Users, FilePlus, LogOut, FileCheck, Plus, Trash2, Package, UserPlus, Power, Tag, Save, AlertCircle, DollarSign, Layers, AlertTriangle, TrendingUp, BarChart3, Database, RefreshCw, Calendar, Upload, FileSpreadsheet, Download, File, Calculator, X, Info, Lock, ArrowUp, ArrowDown, Minus, LayoutDashboard, Settings, FileDown
 } from 'lucide-react';
+
+// Importações baseadas na sua estrutura de pastas (Imagem 3)
 import { Role, ProcessData, ProcessStatus, RequestItem, User, StatusOption, ProductGroup, ProductDatabaseItem, DocumentTemplate } from './types';
 import { generateDocumentFields, analyzeRequestFeasibility } from './services/geminiService';
 import { TEMPLATE_MOTIVACAO, TEMPLATE_MEMORANDO } from './utils/templatesReais';
 
-// --- DEFINIÇÕES DE LAYOUT INTERNO ---
+// --- ENUMS & TYPES ADICIONAIS ---
+enum ProcessPriority {
+  LOW = 'Baixa',
+  NORMAL = 'Normal',
+  HIGH = 'Alta'
+}
+
+// --- CONFIGURAÇÃO DO LAYOUT ---
 interface LayoutProps {
   children: React.ReactNode;
   currentRole: Role;
@@ -20,10 +29,11 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, currentRole, setRole, activeTab, setActiveTab, currentUser }) => {
+  // Verifica se o usuário REAL tem privilégios (Admin ou Manager)
   const isPrivilegedUser = currentUser?.role === Role.ADMIN || currentUser?.role === Role.MANAGER;
 
   const renderSidebarItems = () => {
-    // 1. SOLICITANTE (Visão Específica)
+    // 1. SOLICITANTE
     if (currentRole === Role.REQUESTER) {
       return (
         <>
@@ -37,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentRole, setRole, activeT
       );
     }
 
-    // 2. ANALISTA (Visão Específica)
+    // 2. ANALISTA
     if (currentRole === Role.ANALYST) {
       return (
         <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg mb-2 flex items-center gap-3 transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
@@ -46,14 +56,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentRole, setRole, activeT
       );
     }
 
-    // 3. ADMIN ou GERENTE (Menu Geral)
+    // 3. ADMIN ou GERENTE (Menu Completo)
     return (
       <>
         <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded-lg mb-2 flex items-center gap-3 transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
           <LayoutDashboard size={20} /> <span className="font-medium">Painel de Controle</span>
         </button>
 
-        {/* CORREÇÃO: Botão Nova Solicitação disponível também para Gerente/Admin */}
+        {/* Botão Nova Solicitação disponível também para Gerente/Admin */}
         <button onClick={() => setActiveTab('new-request')} className={`w-full text-left px-4 py-3 rounded-lg mb-2 flex items-center gap-3 transition-colors ${activeTab === 'new-request' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
            <FilePlus size={20} /> <span className="font-medium">Nova Solicitação</span>
         </button>
@@ -93,44 +103,16 @@ const Layout: React.FC<LayoutProps> = ({ children, currentRole, setRole, activeT
           <div className="p-4 border-t border-slate-800 bg-slate-800/50">
             <p className="text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-wider">Simular Acesso Como:</p>
             <div className="space-y-2">
-              <button 
-                onClick={() => { setRole(Role.REQUESTER); setActiveTab('dashboard'); }} 
-                className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.REQUESTER ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-              >
-                <span>Solicitante</span>
-                {currentRole === Role.REQUESTER && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-              
-              <button 
-                onClick={() => { setRole(Role.MANAGER); setActiveTab('dashboard'); }} 
-                className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.MANAGER ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-              >
-                <span>Gerente</span>
-                {currentRole === Role.MANAGER && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-
-              <button 
-                onClick={() => { setRole(Role.ANALYST); setActiveTab('dashboard'); }} 
-                className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.ANALYST ? 'bg-teal-500 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-              >
-                <span>Analista</span>
-                {currentRole === Role.ANALYST && <div className="w-2 h-2 bg-white rounded-full"></div>}
-              </button>
-
+              <button onClick={() => { setRole(Role.REQUESTER); setActiveTab('dashboard'); }} className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.REQUESTER ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}><span>Solicitante</span>{currentRole === Role.REQUESTER && <div className="w-2 h-2 bg-white rounded-full"></div>}</button>
+              <button onClick={() => { setRole(Role.MANAGER); setActiveTab('dashboard'); }} className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.MANAGER ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}><span>Gerente</span>{currentRole === Role.MANAGER && <div className="w-2 h-2 bg-white rounded-full"></div>}</button>
+              <button onClick={() => { setRole(Role.ANALYST); setActiveTab('dashboard'); }} className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.ANALYST ? 'bg-teal-500 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}><span>Analista</span>{currentRole === Role.ANALYST && <div className="w-2 h-2 bg-white rounded-full"></div>}</button>
               {currentUser?.role === Role.ADMIN && (
-                <button 
-                  onClick={() => { setRole(Role.ADMIN); setActiveTab('dashboard'); }} 
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.ADMIN ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-                >
-                  <span>Admin</span>
-                  {currentRole === Role.ADMIN && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                </button>
+                <button onClick={() => { setRole(Role.ADMIN); setActiveTab('dashboard'); }} className={`w-full flex items-center justify-between px-3 py-2 rounded text-sm transition-all ${currentRole === Role.ADMIN ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}><span>Admin</span>{currentRole === Role.ADMIN && <div className="w-2 h-2 bg-white rounded-full"></div>}</button>
               )}
             </div>
           </div>
         )}
       </aside>
-
       <main className="flex-1 overflow-y-auto relative">
         <div className="p-8 pb-24">
           {children}
@@ -140,22 +122,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentRole, setRole, activeT
   );
 };
 
-// --- ENUMS & TYPES ADICIONAIS ---
-enum ProcessPriority {
-  LOW = 'Baixa',
-  NORMAL = 'Normal',
-  HIGH = 'Alta'
-}
-
+// --- DADOS E CONSTANTES ---
 const SLA_DAYS_LIMIT = 3; 
-
 const INITIAL_STATUS_OPTIONS: StatusOption[] = [
   { id: 'st-1', label: 'Aguardando Assinatura', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
   { id: 'st-2', label: 'Em Cotação', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   { id: 'st-3', label: 'Problema no Pedido', color: 'bg-red-100 text-red-800 border-red-200' },
   { id: 'st-4', label: 'Pronto para Retirada', color: 'bg-teal-100 text-teal-800 border-teal-200' },
 ];
-
 const INITIAL_PRODUCT_GROUPS: ProductGroup[] = [
   { id: 'pg-1', name: 'Material de Expediente' },
   { id: 'pg-2', name: 'Informática e TI' },
@@ -163,12 +137,10 @@ const INITIAL_PRODUCT_GROUPS: ProductGroup[] = [
   { id: 'pg-4', name: 'Mobiliário' },
   { id: 'pg-5', name: 'Manutenção Predial' },
 ];
-
 const INITIAL_TEMPLATES: DocumentTemplate[] = [
   { id: 'tmpl-memo', name: 'Memorando de Solicitação', type: 'docx', fileName: 'Memorando_Padrao.doc', lastUpdated: '09/12/2025' },
   { id: 'tmpl-motivacao', name: 'Motivação do Ato', type: 'docx', fileName: 'Motivacao_Ato.doc', lastUpdated: '09/12/2025' },
 ];
-
 const INITIAL_USERS: (User & { username?: string; password?: string })[] = [
   { id: 'u1', name: 'João Silva', role: Role.REQUESTER, active: true, username: 'joao', password: '123' },
   { id: 'u2', name: 'Maria Souza', role: Role.REQUESTER, active: true, username: 'maria', password: '123' },
@@ -176,29 +148,19 @@ const INITIAL_USERS: (User & { username?: string; password?: string })[] = [
   { id: 'u4', name: 'Analista Pedro', role: Role.ANALYST, active: true, username: 'pedro', password: '123' },
   { id: 'u5', name: 'Admin Master', role: Role.ADMIN, active: true, username: 'admin', password: '123' },
 ];
-
 const INITIAL_SHEET_DATA: ProductDatabaseItem[] = [
   { familia: '10', idGMS: '102030', descricao: 'Papel A4 Alcalino 75g (Resma)', consolidadoDT: 'DT-2024-EXP-01', estoque: 1500 },
   { familia: '10', idGMS: '102031', descricao: 'Caneta Esferográfica Azul (Cx 50un)', consolidadoDT: 'DT-2024-EXP-02', estoque: 200 },
   { familia: '40', idGMS: '405060', descricao: 'Toner HP LaserJet 85A Original', consolidadoDT: 'DT-2024-TI-05', estoque: 15 },
   { familia: '50', idGMS: '501020', descricao: 'Detergente Líquido Neutro 5L', consolidadoDT: 'DT-2024-LIM-01', estoque: 45 },
 ];
-
 const INITIAL_DATA: (ProcessData & { priority?: ProcessPriority })[] = [
   {
     id: 'REQ-001',
     requesterName: 'João Silva',
     ataPregao: '12/2023',
     items: [
-      {
-        lote: '05',
-        gmsCode: '405060',
-        quantidade: 50,
-        consolidadoDT: 'DT-2024-X',
-        estoqueAtual: 5,
-        descricao: 'Aquisição urgente de toners para impressoras do 2º andar.',
-        valorUnitario: 125.90
-      }
+      { lote: '05', gmsCode: '405060', quantidade: 50, consolidadoDT: 'DT-2024-X', estoqueAtual: 5, descricao: 'Aquisição urgente de toners para impressoras do 2º andar.', valorUnitario: 125.90 }
     ],
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
     status: ProcessStatus.PENDING,
@@ -209,22 +171,8 @@ const INITIAL_DATA: (ProcessData & { priority?: ProcessPriority })[] = [
     requesterName: 'Maria Souza',
     ataPregao: '08/2024',
     items: [
-      {
-        lote: '01',
-        gmsCode: '102030',
-        quantidade: 200,
-        consolidadoDT: 'DT-2024-Y',
-        estoqueAtual: 120,
-        descricao: 'Resmas de papel A4 para estoque trimestral.',
-      },
-      {
-        lote: '03',
-        gmsCode: '102031',
-        quantidade: 50,
-        consolidadoDT: 'DT-2024-Y',
-        estoqueAtual: 10,
-        descricao: 'Canetas azuis esferográficas.',
-      }
+      { lote: '01', gmsCode: '102030', quantidade: 200, consolidadoDT: 'DT-2024-Y', estoqueAtual: 120, descricao: 'Resmas de papel A4 para estoque trimestral.' },
+      { lote: '03', gmsCode: '102031', quantidade: 50, consolidadoDT: 'DT-2024-Y', estoqueAtual: 10, descricao: 'Canetas azuis esferográficas.' }
     ],
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     status: ProcessStatus.DISTRIBUTED,
@@ -380,6 +328,7 @@ const App: React.FC = () => {
     }
   };
 
+  // --- CORREÇÃO DE IMPORTAÇÃO (Encoding) ---
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -416,22 +365,19 @@ const App: React.FC = () => {
         alert("Erro ao ler o arquivo.");
       }
     };
-    
-    // --- CORREÇÃO DE ACENTOS NO UPLOAD: Lendo como ISO-8859-1 (Latin1) ---
+    // Leitura forçada em Latin-1 para corrigir acentos do Excel/Windows
     reader.readAsText(file, 'ISO-8859-1'); 
     if(fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // --- EXPORTAÇÃO NATIVA (Sem biblioteca externa para evitar erro de build) ---
   const handleExportReport = (filteredData: typeof processes) => {
     try {
-        // 1. Definição do Cabeçalho CSV
         const isManagerOrAdmin = currentUser?.role === Role.ADMIN || currentUser?.role === Role.MANAGER;
         
-        // --- CORREÇÃO DE ACENTOS NA EXPORTAÇÃO: Adicionando BOM (\uFEFF) ---
-        // Isso diz ao Excel que o arquivo CSV é UTF-8
+        // BOM para UTF-8 (Corrige abertura direta no Excel)
         const bom = "\uFEFF"; 
         
-        // Cabeçalho adaptativo
         const header = [
             "ID_PEDIDO", "PROTOCOLO", "DATA_CRIACAO", "STATUS", 
             "LOTE", "COD_GMS", "DESCRICAO_ITEM", "QUANTIDADE", "VALOR_UNIT", "VALOR_TOTAL",
@@ -440,7 +386,6 @@ const App: React.FC = () => {
         
         let csvContent = header.join(";") + "\n";
 
-        // 2. Iteração dos Dados (Flattening: 1 linha por item)
         filteredData.forEach(p => {
             const daysOpen = Math.ceil(Math.abs(new Date().getTime() - new Date(p.createdAt).getTime()) / (1000 * 60 * 60 * 24));
             const groupName = productGroups.find(g => g.id === p.productGroupId)?.name || '-';
@@ -469,7 +414,6 @@ const App: React.FC = () => {
             });
         });
 
-        // 3. Download via Blob
         const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
